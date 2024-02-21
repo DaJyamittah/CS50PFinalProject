@@ -148,14 +148,14 @@ class Application(tk.Frame):
         #check if indices are within bounds
         if (0 <= grid_x < self.grid_size 
             and 0 <= grid_y < self.grid_size):
-            self.game_board.switch(grid_y, grid_x)
+            self.game_board.switch(grid_y, grid_x) #for some reason tkinter and numpy disagree on what x and y mean
 
             #get item ID of the square at the clicked position
             item_id = self.canvas.find_closest(x, y)
 
             #change fill color based on state
             fill_color = ('black' if 
-                          self.game_board.current_state[grid_y, grid_x] 
+                          self.game_board.current_state[grid_y, grid_x] #just a continuation of the tkinter-numpy dispute
                           else 'white')
 
             #update fill color of existing square
