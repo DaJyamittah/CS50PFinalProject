@@ -1,5 +1,3 @@
-#Board class and related functions to the creation and updating of the game board
-#The board class will have a start_state which is a 2D boolean array
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as ani
@@ -106,29 +104,29 @@ class Plotter:
         plt.show()
 
 class Application(tk.Frame):
-    def __init__(self, master=None):
-        tk.Frame.__init__(self, master)
-        self.grid()
+    def __init__(self, root):
+        self.root = root
 
         #grid and cell dimensions
         self.grid_size = 50 #cells that make up the the grid
         self.cell_size = 10 #cell size
         self.frames = 25 #length of animation/depth of 3d plot
 
-        #create window
-        self.canvas = tk.Canvas(root, 
-                                width=((self.grid_size * self.cell_size) + 
-                                       (self.grid_size * 2)),
-                                height=self.grid_size * self.cell_size)
-        self.canvas.grid(row=0, column=0)
-
+        #calling GUI elements
         self.create_grid()
         self.animate_button()
         self.plot3d_button()
 
+        #creating an empty Board object
         self.game_board = Board(self.grid_size)
 
     def create_grid(self):
+        self.canvas = tk.Canvas(self.root, 
+                                width=(self.grid_size * self.cell_size), 
+                                height=(self.grid_size * self.cell_size))
+        self.canvas.pack() 
+
+        #draw grid          
         for row in range(self.grid_size):
             for col in range(self.grid_size):
                 x1 = row * self.cell_size
@@ -162,59 +160,30 @@ class Application(tk.Frame):
             self.canvas.itemconfig(item_id, fill=fill_color)
 
     def animate_button(self):
-        #create rectangle for button
-        a1 = (self.grid_size * self.cell_size) + (2 * self.cell_size)
-        b1 = (self.grid_size * self.cell_size) / 2
-        a2 = (self.grid_size * self.cell_size) + (4 * self.cell_size)
-        b2 = (((self.grid_size * self.cell_size) / 2) + 
-              (2 * self.cell_size))
-        self.button_rect = self.canvas.create_rectangle(a1,b1,a2,b2, 
-                                                        fill='lightblue')
+        self.ani_button = tk.Button(self.root, 
+                                    text='Animate', 
+                                    command=self.on_animate_click)
+        self.ani_button.pack()
 
-        #create text above button
-        button_text = 'animate'
-        text_x = (a1+a2) // 2
-        text_y = b1 - self.cell_size
-        self.button_text = self.canvas.create_text(text_x, text_y,
-                                                   text=button_text,
-                                                   fill='black',
-                                                   font=('Arial', 10))
-        
-        #bind button to click event
-        self.canvas.tag_bind(self.button_rect, '<Button-1>', self.on_animate_click)
-
-    def on_animate_click(self, event):
-        #create an instance of Plotter and call its animate method
+    def on_animate_click(self):
         plotter = Plotter(self.game_board)
         animate = plotter.animate(self.frames)
 
     def plot3d_button(self):
-        #create rectangle for button
-        a1 = (self.grid_size * self.cell_size) + (2 * self.cell_size)
-        b1 = (self.grid_size * self.cell_size) - (5 *  self.cell_size)
-        a2 = (self.grid_size * self.cell_size) + (4 * self.cell_size)
-        b2 = (self.grid_size * self.cell_size) - (3 *  self.cell_size)
-        self.button_rect = self.canvas.create_rectangle(a1,b1,a2,b2, fill='lightblue')
+        self.plot_button = tk.Button(self.root,
+                                     text='Plot 3D',
+                                     command=self.on_plot3d_click)
+        self.plot_button.pack()
 
-        #create text above button
-        button_text = 'plot 3d'
-        text_x = (a1+a2) // 2
-        text_y = b1 - self.cell_size
-        self.button_text = self.canvas.create_text(text_x, text_y,
-                                                   text=button_text,
-                                                   fill='black',
-                                                   font=('Arial', 10))
-        
-        #bind button to click event
-        self.canvas.tag_bind(self.button_rect, '<Button-1>', self.on_plot3d_click)
-
-    def on_plot3d_click(self, event):
+    def on_plot3d_click(self):
         x, y, z = self.game_board.get_xyz(self.frames)
         plotter = Plotter(self.game_board)
         plot3d = plotter.show_3d(x, y, z)
 
+def main():
+    root = tk.Tk()
+    app = Application(root)
+    root.mainloop()
 
 if __name__ == '__main__':
-    root = tk.Tk()
-    app = Application(master=root)
-    app.mainloop()
+    main()
