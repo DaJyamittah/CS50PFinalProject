@@ -7,6 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import tkinter as tk
 
 class Board:
+    #Initializing a Board object will create an empty Board, a square with 'size' width and length
     def __init__(self, size):
         self.size = size #specifies size of square 2d array
         self.current_state = self.make() #ensures current_state is a 2d boolean array
@@ -52,7 +53,7 @@ class Board:
                     living.append([row, col])
         return living
     
-    def get_3d(self, depth):
+    def get_3d(self, depth): #get x, y and z of each living cell in each tick
         living_3d = [] #empty 3d list
         for level in range(depth):
             sub_living = self.get() #2 dimensional sublist of current_state living cells
@@ -62,7 +63,7 @@ class Board:
             self.update_2d() #updating the current_state of the board
         return living_3d
     
-    def get_xyz(self, depth):
+    def get_xyz(self, depth): #separate get_3d list into 3 seperate lists, one for each of x, y and z
         living_3d = self.get_3d(depth)
         x = []
         y = []
@@ -76,6 +77,7 @@ class Board:
         return x, y, z
 
 class Plotter:
+    #Instantiate a Plotter object with a non-empty Board object
     def __init__(self, start_state):
         self.current_state = start_state #start_state must be Board object
 
@@ -90,14 +92,17 @@ class Plotter:
         fig, ax = plt.subplots() #set subplots to figures and axes
         img = plt.imshow(game.current_state) #make a binary image of the games current state
         plt.axis('off') #hide labels
-        animation = ani.FuncAnimation(fig, self.update, fargs=(img, game),
-                                      frames=length, interval=200) #animate using update function. interval is ms between ticks       
+        animation = ani.FuncAnimation(fig, self.update, 
+                                      fargs=(img, game),
+                                      frames=length, 
+                                      interval=25)
         plt.show() 
 
     def show_3d(self, x, y, z):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        scatter = ax.scatter(x, y, z, c='black', marker='s', s=25)
+        scatter = ax.scatter(x, y, z, c='black', marker='s', 
+                             s=25)
         plt.show()
 
 class Application(tk.Frame):
@@ -112,7 +117,8 @@ class Application(tk.Frame):
 
         #create window
         self.canvas = tk.Canvas(root, 
-                                width=(self.grid_size * self.cell_size) + (self.grid_size * 2),
+                                width=((self.grid_size * self.cell_size) + 
+                                       (self.grid_size * 2)),
                                 height=self.grid_size * self.cell_size)
         self.canvas.grid(row=0, column=0)
 
@@ -129,7 +135,8 @@ class Application(tk.Frame):
                 y1 = col * self.cell_size
                 x2 = x1 + self.cell_size
                 y2 = y1 + self.cell_size
-                self.canvas.create_rectangle(x1,y1,x2,y2, fill='white')
+                self.canvas.create_rectangle(x1,y1,x2,y2, 
+                                             fill='white')
 
         self.canvas.bind('<Button-1>', self.on_click)
 
@@ -139,14 +146,17 @@ class Application(tk.Frame):
         grid_y = y // self.cell_size
 
         #check if indices are within bounds
-        if 0 <= grid_x < self.grid_size and 0 <= grid_y < self.grid_size:
+        if (0 <= grid_x < self.grid_size 
+            and 0 <= grid_y < self.grid_size):
             self.game_board.switch(grid_y, grid_x)
 
             #get item ID of the square at the clicked position
             item_id = self.canvas.find_closest(x, y)
 
             #change fill color based on state
-            fill_color = 'black' if self.game_board.current_state[grid_y, grid_x] else 'white'
+            fill_color = ('black' if 
+                          self.game_board.current_state[grid_y, grid_x] 
+                          else 'white')
 
             #update fill color of existing square
             self.canvas.itemconfig(item_id, fill=fill_color)
@@ -156,8 +166,10 @@ class Application(tk.Frame):
         a1 = (self.grid_size * self.cell_size) + (2 * self.cell_size)
         b1 = (self.grid_size * self.cell_size) / 2
         a2 = (self.grid_size * self.cell_size) + (4 * self.cell_size)
-        b2 = ((self.grid_size * self.cell_size) / 2) + (2 * self.cell_size)
-        self.button_rect = self.canvas.create_rectangle(a1,b1,a2,b2, fill='lightblue')
+        b2 = (((self.grid_size * self.cell_size) / 2) + 
+              (2 * self.cell_size))
+        self.button_rect = self.canvas.create_rectangle(a1,b1,a2,b2, 
+                                                        fill='lightblue')
 
         #create text above button
         button_text = 'animate'
@@ -200,6 +212,7 @@ class Application(tk.Frame):
         x, y, z = self.game_board.get_xyz(self.frames)
         plotter = Plotter(self.game_board)
         plot3d = plotter.show_3d(x, y, z)
+
 
 if __name__ == '__main__':
     root = tk.Tk()
