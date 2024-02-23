@@ -4,6 +4,7 @@ import matplotlib.animation as ani
 from mpl_toolkits.mplot3d import Axes3D
 import tkinter as tk
 
+
 class Board:
     #Initializing a Board object will create an empty Board, a square with 'size' width and length
     def __init__(self, start_state): #start state must be boolean, square, 2d numpy array
@@ -11,13 +12,8 @@ class Board:
         self.size = start_state.shape[0] #specifies size of square 2d array
         self.current_state = start_state
         self.play_area = range(1, self.size - 1) #the playable area, discounting the border rows and columns
-    
-    def make(self): #make empty array
-        return np.full((self.size, 
-                        self.size), 
-                        False) #adds a border around for calculating neighboring elements
 
-    def inspect(self, r, c): #get a list of the neighboring elements of a co-ordinate
+    def inspect(self, r, c): #get a list of the neighboring elements from co-ordinate (row, column)
         neighbors = []
         for row in range(-1, 2): # from -1 to 1
             for col in range(-1, 2):# from -1 to 1
@@ -28,7 +24,7 @@ class Board:
         return neighbors
 
     def update(self): #next tick of current_state
-        new_board = self.make() #all dead board
+        new_board = np.full((self.size, self.size), False) #all dead board
         for row in self.play_area:
             for col in self.play_area:
                 count = self.inspect(row, col).count(True) #number of living cells neighboring element
@@ -74,6 +70,7 @@ class Board:
                 z.append(c)
         return x, y, z
 
+
 class Plotter:
     #Instantiate a Plotter object with a non-empty Board object
     def __init__(self, start_state):
@@ -85,15 +82,15 @@ class Plotter:
         img.set_array(game.current_state) #set binary map
         return img,
 
-    def animate(self, length):
+    def animate(self, speed):
         game = self.current_state
         fig, ax = plt.subplots() #set subplots to figures and axes
         img = plt.imshow(game.current_state) #make a binary image of the games current state
         plt.axis('off') #hide labels
         animation = ani.FuncAnimation(fig, self.update, 
                                       fargs=(img, game),
-                                      frames=length, 
-                                      interval=25)
+                                      frames=25, 
+                                      interval=speed)
         plt.show() 
 
     def show_3d(self, x, y, z):
@@ -103,6 +100,7 @@ class Plotter:
                              s=25)
         plt.show()
 
+
 class Application(tk.Frame):
     def __init__(self, root):
         self.root = root
@@ -110,12 +108,15 @@ class Application(tk.Frame):
         #grid and cell dimensions
         self.grid_size = 50 #cells that make up the the grid
         self.cell_size = 10 #cell size
-        self.frames = 25 #length of animation/depth of 3d plot
+        self.depth = 25 #length of animation/depth of 3d plot
+        self.speed = 25
 
         #calling GUI elements
         self.create_grid()
         self.animate_button()
         self.plot3d_button()
+        self.speed_dropdown()
+        self.depth_dropdown()
 
         #creating an empty boolean, square, 2d numpy array, all False
         self.game_board = np.full((self.grid_size + 2, self.grid_size + 2), False)
@@ -167,7 +168,7 @@ class Application(tk.Frame):
 
     def on_animate_click(self):
         plotter = Plotter(self.game_board)
-        animate = plotter.animate(self.frames)
+        animate = plotter.animate(self.speed)
 
     def plot3d_button(self):
         self.plot_button = tk.Button(self.root,
@@ -177,14 +178,54 @@ class Application(tk.Frame):
 
     def on_plot3d_click(self):
         game_3d = Board(self.game_board)
-        x, y, z = game_3d.get_xyz(self.frames)
+        x, y, z = game_3d.get_xyz(self.depth)
         plotter = Plotter(self.game_board)
         plot3d = plotter.show_3d(x, y, z)
+
+    def speed_dropdown(self):
+        self.selected_speed = tk.StringVar(self.root)
+        self.selected_speed.set('Fast') # Default Speed
+
+        self.speed_dropdown = tk.OptionMenu(self.root, 
+                                            self.selected_speed, 
+                                            'Fast', 'Gallop', 'Slow')
+        self.speed_dropdown.pack(side='left', padx=10)
+
+        self.speed_button = tk.Button(self.root, 
+                                text='Set Speed',
+                                command=self.set_speed)
+        self.speed_button.pack(side='left', padx=self.cell_size)
+
+    def set_speed(self):
+        selected_speed = self.selected_speed.get()
+        speed_dict = {'Fast': 25, 'Gallop': 250, 'Slow': 1000}
+        self.speed = speed_dict[selected_speed]
+
+    def depth_dropdown(self):
+        self.selected_depth = tk.StringVar(self.root)
+        self.selected_depth.set('Shallow') # Default Depth
+
+        self.depth_button = tk.Button(self.root, 
+                                text='Set Depth',
+                                command=self.set_depth)
+        self.depth_button.pack(side='right', padx=10)
+
+        self.depth_dropdown = tk.OptionMenu(self.root, 
+                                            self.selected_depth, 
+                                            'Shallow', 'Mid', 'Deep')
+        self.depth_dropdown.pack(side='right', padx=10)
+
+    def set_depth(self):
+        selected_depth = self.selected_depth.get()
+        depth_dict = {'Shallow': 25, 'Mid': 175, 'Deep': 350}
+        self.depth = depth_dict[selected_depth]
+
 
 def main():
     root = tk.Tk()
     app = Application(root)
     root.mainloop()
+
 
 if __name__ == '__main__':
     main()
