@@ -6,13 +6,16 @@ import tkinter as tk
 
 class Board:
     #Initializing a Board object will create an empty Board, a square with 'size' width and length
-    def __init__(self, size):
-        self.size = size #specifies size of square 2d array
-        self.current_state = self.make() #empty playing board
-        self.play_area = range(1, size + 1) #the playable area, discounting the border rows and columns
-
+    def __init__(self, start_state): #start state must be boolean, square, 2d numpy array
+        self.start = start_state
+        self.size = start_state.shape[0] #specifies size of square 2d array
+        self.current_state = start_state
+        self.play_area = range(1, self.size - 1) #the playable area, discounting the border rows and columns
+    
     def make(self): #make empty array
-        return np.full((self.size + 2, self.size + 2), False) #adds a border around for calculating neighboring elements
+        return np.full((self.size, 
+                        self.size), 
+                        False) #adds a border around for calculating neighboring elements
 
     def inspect(self, r, c): #get a list of the neighboring elements of a co-ordinate
         neighbors = []
@@ -74,7 +77,7 @@ class Board:
 class Plotter:
     #Instantiate a Plotter object with a non-empty Board object
     def __init__(self, start_state):
-        self.current_state = start_state #start_state must be Board object
+        self.current_state = Board(start_state) #start_state must be Board object
 
     @staticmethod
     def update(frame, img, game): #game is Board object
@@ -114,8 +117,8 @@ class Application(tk.Frame):
         self.animate_button()
         self.plot3d_button()
 
-        #creating an empty Board object
-        self.game_board = Board(self.grid_size)
+        #creating an empty boolean, square, 2d numpy array, all False
+        self.game_board = np.full((self.grid_size + 2, self.grid_size + 2), False)
 
     def create_grid(self):
         self.canvas = tk.Canvas(self.root, 
@@ -143,14 +146,14 @@ class Application(tk.Frame):
         #check if indices are within bounds
         if (0 <= grid_x < self.grid_size 
             and 0 <= grid_y < self.grid_size):
-            self.game_board.current_state[grid_y, grid_x] = not self.game_board.current_state[grid_y, grid_x] #for some reason tkinter and numpy disagree on what x and y mean
+            self.game_board[grid_y, grid_x] = not self.game_board[grid_y, grid_x] #for some reason tkinter and numpy disagree on what x and y mean
 
             #get item ID of the square at the clicked position
             item_id = self.canvas.find_closest(x, y)
 
             #change fill color based on state
             fill_color = ('black' if 
-                          self.game_board.current_state[grid_y, grid_x] #just a continuation of the tkinter-numpy dispute
+                          self.game_board[grid_y, grid_x] #just a continuation of the tkinter-numpy dispute
                           else 'white')
 
             #update fill color of existing square
@@ -173,7 +176,8 @@ class Application(tk.Frame):
         self.plot_button.pack(side='left', padx=10)
 
     def on_plot3d_click(self):
-        x, y, z = self.game_board.get_xyz(self.frames)
+        game_3d = Board(self.game_board)
+        x, y, z = game_3d.get_xyz(self.frames)
         plotter = Plotter(self.game_board)
         plot3d = plotter.show_3d(x, y, z)
 
