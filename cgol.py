@@ -8,14 +8,11 @@ class Board:
     #Initializing a Board object will create an empty Board, a square with 'size' width and length
     def __init__(self, size):
         self.size = size #specifies size of square 2d array
-        self.current_state = self.make() #ensures current_state is a 2d boolean array
+        self.current_state = self.make() #empty playing board
         self.play_area = range(1, size + 1) #the playable area, discounting the border rows and columns
 
     def make(self): #make empty array
         return np.full((self.size + 2, self.size + 2), False) #adds a border around for calculating neighboring elements
-    
-    def switch(self, r, c): #flips an element to be alive or dead
-        self.current_state[r, c] = not self.current_state[r, c] #flips living -> dead and vice versa
 
     def inspect(self, r, c): #get a list of the neighboring elements of a co-ordinate
         neighbors = []
@@ -146,7 +143,7 @@ class Application(tk.Frame):
         #check if indices are within bounds
         if (0 <= grid_x < self.grid_size 
             and 0 <= grid_y < self.grid_size):
-            self.game_board.switch(grid_y, grid_x) #for some reason tkinter and numpy disagree on what x and y mean
+            self.game_board.current_state[grid_y, grid_x] = not self.game_board.current_state[grid_y, grid_x] #for some reason tkinter and numpy disagree on what x and y mean
 
             #get item ID of the square at the clicked position
             item_id = self.canvas.find_closest(x, y)
@@ -163,7 +160,7 @@ class Application(tk.Frame):
         self.ani_button = tk.Button(self.root, 
                                     text='Animate', 
                                     command=self.on_animate_click)
-        self.ani_button.pack()
+        self.ani_button.pack(side='left', padx=10)
 
     def on_animate_click(self):
         plotter = Plotter(self.game_board)
@@ -173,7 +170,7 @@ class Application(tk.Frame):
         self.plot_button = tk.Button(self.root,
                                      text='Plot 3D',
                                      command=self.on_plot3d_click)
-        self.plot_button.pack()
+        self.plot_button.pack(side='left', padx=10)
 
     def on_plot3d_click(self):
         x, y, z = self.game_board.get_xyz(self.frames)
