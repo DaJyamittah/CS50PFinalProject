@@ -11,40 +11,43 @@ import matplotlib.animation as ani
 from mpl_toolkits.mplot3d import Axes3D
 import tkinter as tk
 
-#Function 1: Inspect Element - returns a list of neighboring elements
-def inspect(board, r, c): #get a list of neighboring elements
-    if (isinstance(board, np.ndarray) == False or #is board a numpy array?
-        isinstance(board[r, c], np.bool_) == False): # is the board element a numpy boolean?
+
+def inspect(board, r, c): 
+    '''Returns a list of neighboring elements.'''
+    if (isinstance(board, np.ndarray) == False or 
+        isinstance(board[r, c], np.bool_) == False): 
         raise ValueError('board must be 2d boolean numpy array')
-    elif (r == 0 or r == board.shape[0] - 1 or # row cannot be on borders
-          c == 0 or c == board.shape[0] - 1): #column likewise
+    elif (r == 0 or r == board.shape[0] - 1 or # row/col cannot be on borders
+          c == 0 or c == board.shape[0] - 1): 
         raise ValueError('board elements must be in playable area')
     neighbors = []
-    for row in range(-1, 2): #from -1 to 1
-        for col in range(-1, 2): # from -1 to 1
-            if [row, col] == [0, 0]: #center
-                continue #do not write the element we are inspecting
+    for row in range(-1, 2): 
+        for col in range(-1, 2):
+            if [row, col] == [0, 0]:
+                continue
             else:
                 neighbors.append(board[row+r, col+c])
     return neighbors
 
-#Function 2: Update Board - returns a new game board with the updated state of the current state of the board
-def update(board): #create a new board with the next tick of the current state
+
+def update(board):
+    '''Returns a new game board with the updated state of the current state of the board.'''
     size = board.shape[0] #size of board will be +2 of playable area
     new_board = np.full((size, size), False)
     for row in range(1, size - 1): #thus we subtract 1 instead of adding
         for col in range(1, size - 1):
-            count = inspect(board, row, col).count(True) #number of True elements neighboring
-            if board[row, col] == True: #if the element we are inspecting is alive
-                if count == 2 or count == 3: #and it meets the criteria to keep living
-                    new_board[row, col] = True #we must change the new_board to reflect that
+            count = inspect(board, row, col).count(True) 
+            if board[row, col] == True: 
+                if count == 2 or count == 3: 
+                    new_board[row, col] = True
             else:
-                if count == 3: #since all elements on the new_board start dead
-                    new_board[row, col] = True #we need only concern ourselves with any living elements on the new_board
+                if count == 3: 
+                    new_board[row, col] = True 
     return new_board
 
 
-def get(board): #get the co-ordinates of each living cell in a tick
+def get(board):
+    '''Get the co-ordinates of each living cell in a tick.'''
     living = []
     for row in range(1, board.shape[0] - 1):
         for col in range(1, board.shape[0] - 1):
@@ -53,18 +56,20 @@ def get(board): #get the co-ordinates of each living cell in a tick
     return living
 
 
-def get_3d(board, depth): #get x, y and z of each living cell in each tick
+def get_3d(board, depth):
+    '''Get x, y and z of each living cell in each tick.'''
     living_3d = [] #empty 3d-value (x, y, z) list
     for level in range(depth):
         sub_living = get(board) #2 dimensional sublist of current_state living cells
         for cell in sub_living:
             cell.append(level) 
-        living_3d.append(sub_living) #adding the modified self.get() list to the master list
-        board = update(board) #updating the current_state of the board
+        living_3d.append(sub_living)
+        board = update(board)
     return living_3d
 
-#Function 3: Get XYZ coordinates - returns a tuple of seperated x, y, z lists
-def get_xyz(board, depth): #separate get_3d list into 3 seperate lists, one for each of x, y and z
+
+def get_xyz(board, depth):
+    '''Get XYZ coordinates - returns a tuple of seperated x, y, z lists.'''
     living_3d = get_3d(board, depth) #gets ([x], [y], [z]) lists to depth number of ticks from start state
     x = []
     y = []
@@ -79,95 +84,154 @@ def get_xyz(board, depth): #separate get_3d list into 3 seperate lists, one for 
 
 
 class Plotter:
-    #Instantiate a Plotter object with the starting state of the board
-    def __init__(self, start_state):
-        self.current_state = start_state #start_state must be 2d boolean numpy array
+    '''
+    Defines matplotlib plots to show animation and 3d scatter plot.
 
-    def update_2d(self): #update the current state to the next tick
+    Attributes: 
+    start_state - 2d boolean numpy array: The user-defined start state of the
+    game board from which the game will run.
+    '''
+
+    def __init__(self, start_state):
+        self.current_state = start_state
+
+    def update_2d(self):
+        '''Update the current state to the next tick.'''
         self.current_state = update(self.current_state)
     
     def update_ani(self, frame, img): #frame is necessary for matplotlibs FuncAnimation method
-        self.update_2d() #changes the current_state
-        img.set_array(self.current_state) #set new state array
-        return img, #img needs to be a tuple, the comma signifies this
+        '''
+        Updates numpy array to a new plot 'img'.
+
+        frame argument is necessary for matplotlibs FuncAnimation method
+        returns img, - img needs to be a tuple, the comma signifies this
+        '''
+        self.update_2d() 
+        img.set_array(self.current_state) 
+        return img,
 
     def animate(self, speed):
-        fig, ax = plt.subplots() #set subplots to figures and axes
-        img = plt.imshow(self.current_state) #make a binary image of the games current state
+        '''
+        Creates animation by updating current_state and mapping it
+        to 'img'.
+
+        Arguments in FuncAnimation are passed through fargs, frames is implicit
+        frames argument simply needs to be more than 1 to work, I don't know why
+        '''
+        fig, ax = plt.subplots()
+        img = plt.imshow(self.current_state)
         plt.axis('off') #hide labels
-        animation = ani.FuncAnimation(fig, self.update_ani, #arguments for update_ani provided in fargs
-                                      fargs=(img,), #frame is taken by FuncAnimation, so no need to call it
-                                      frames=25, #the frames argument simply needs to be more than 1 to work, i dont know why. 
+        animation = ani.FuncAnimation(fig, self.update_ani,
+                                      fargs=(img,),
+                                      frames=2,
                                       interval=speed)
         plt.show() 
 
     def show_3d(self, x, y, z, size):
-        fig = plt.figure() #set new figure
-        ax = fig.add_subplot(111, projection='3d') #add new 3d subplot
-        scatter = ax.scatter(x, y, z, c='black', marker='s', #x, y, z taken from get_xyz()
-                             s=size) #size is determined by Depth
+        '''
+        Shows 3D scatter plot
+        
+        x, y, and z are derived from get_xyz(start_state, depth)
+        size is determined in the UI based on the depth of the scatter plot
+        '''
+        fig = plt.figure() 
+        ax = fig.add_subplot(111, projection='3d')
+        scatter = ax.scatter(x, y, z, c='black', marker='s',
+                             s=size)
         plt.show()
 
 
 class Application(tk.Frame):
+    '''
+    UI - User defined starting state of board with plotting options.
+
+    A canvas with a grid drawn in is the main element,
+    below that there is an 'Animate' and 'Plot 3D' Buttons.
+
+    Two drop down menus for 'Speed' (of animation) and
+    'Depth' (of 3D scatter plot).
+    
+    Another two buttons to set the depth and speed.
+    '''
     def __init__(self, root):
+        '''
+        Initialization of UI element.
+
+        grid_size (int): cells which make up the grid
+        cell_size (int): size of cells in physical size
+        depth (int): depth of 3D plot
+        scatter_size (int): size of points on 3D plot
+        speed (int): speed of animation
+
+        game_board (2d bool_ numpy array): starts out as a completely False board based on grid size
+        I'm adding +2 to each of rows and cols to give a buffer for the inspect() function to work properly
+        '''
         self.root = root
 
-        #grid and cell dimensions
-        self.grid_size = 50 #cells that make up the the grid
-        self.cell_size = 10 #cell size
-        self.depth = 25 #depth of 3d plot
-        self.scatter_size = 60 #size of 3d scatter point
-        self.speed = 25 #speed of animation
+        self.grid_size = 50
+        self.cell_size = 10
+        self.depth = 25
+        self.scatter_size = 60
+        self.speed = 25
 
-        #calling GUI elements
         self.create_grid()
         self.animate_button()
         self.plot3d_button()
         self.speed_dropdown()
         self.depth_dropdown()
 
-        #creating a boolean, square, 2d numpy array, all False
-        #adding +2 to each of rows and cols to give buffer for inspect() function
         self.game_board = np.full((self.grid_size + 2, self.grid_size + 2), False)
 
-    def create_grid(self): #this is a canvas object within the grid() of tkinter
+    def create_grid(self): 
+        '''This is a canvas object within the grid() of tkinter.
+
+        Using grid_size * cell_size to get the width/height of the window to make the canvas 
+        big enough.
+
+        Create rectangles to represent each element in the playable area of the game_board.
+
+        Bind canvas to click event.
+        '''
         self.canvas = tk.Canvas(self.root, 
-                                width=(self.grid_size * self.cell_size),  #we need to make the window big enough to handle the grid
+                                width=(self.grid_size * self.cell_size),
                                 height=(self.grid_size * self.cell_size))
         self.canvas.pack() 
-
-        #draw grid          
+        
         for row in range(self.grid_size):
             for col in range(self.grid_size):
-                x1 = row * self.cell_size #these give the coordinates for the start  
-                y1 = col * self.cell_size #and end coordinates of the square representing an element
-                x2 = x1 + self.cell_size #in the numpy array
+                x1 = row * self.cell_size 
+                y1 = col * self.cell_size
+                x2 = x1 + self.cell_size
                 y2 = y1 + self.cell_size
                 self.canvas.create_rectangle(x1,y1,x2,y2, 
-                                             fill='white') #all white board is blank
+                                             fill='white')
 
         self.canvas.bind('<Button-1>', self.on_click)
 
     def on_click(self, event):
-        x, y = event.x, event.y #get x and y coordinates of click event
-        grid_x = x // self.cell_size #get coordinate of element in grid
+        '''
+        Click Event (Canvas element)
+
+        Gets the x/y coordinates of the click event, then 
+        changes the corresponding element in the game_board.
+
+        Change the fill color of canvas() element based on state of game_board
+        '''
+        x, y = event.x, event.y 
+        grid_x = x // self.cell_size 
         grid_y = y // self.cell_size
 
         #check if indices are within bounds
         if (0 <= grid_x < self.grid_size 
             and 0 <= grid_y < self.grid_size):
-            self.game_board[grid_y, grid_x] = not self.game_board[grid_y, grid_x] #for some reason tkinter and numpy disagree on what x and y mean
+            self.game_board[grid_y, grid_x] = not self.game_board[grid_y, grid_x] #tkinter and numpy disagree on x and y
 
-            #get item ID of the square at the clicked position
             item_id = self.canvas.find_closest(x, y) #get coordinate of element in array
 
-            #change fill color based on state
-            fill_color = ('black' if #black cells are living element in array
-                          self.game_board[grid_y, grid_x] #just a continuation of the tkinter-numpy dispute
+            fill_color = ('black' if
+                          self.game_board[grid_y, grid_x]
                           else 'white')
 
-            #update fill color of existing square
             self.canvas.itemconfig(item_id, fill=fill_color)
 
     def animate_button(self):
@@ -194,7 +258,7 @@ class Application(tk.Frame):
 
     def speed_dropdown(self):
         self.selected_speed = tk.StringVar(self.root)
-        self.selected_speed.set('Fast') # Default Speed
+        self.selected_speed.set('Fast')
 
         self.speed_dropdown = tk.OptionMenu(self.root, 
                                             self.selected_speed, 
@@ -213,7 +277,7 @@ class Application(tk.Frame):
 
     def depth_dropdown(self):
         self.selected_depth = tk.StringVar(self.root)
-        self.selected_depth.set('Shallow') # Default Depth
+        self.selected_depth.set('Shallow')
 
         self.depth_button = tk.Button(self.root, 
                                 text='Set Depth',
