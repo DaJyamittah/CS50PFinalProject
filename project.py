@@ -8,14 +8,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as ani
-from mpl_toolkits.mplot3d import Axes3D
 import tkinter as tk
 
 
 def inspect(board, r, c): 
     '''Returns a list of neighboring elements.'''
-    if (isinstance(board, np.ndarray) == False or 
-        isinstance(board[r, c], np.bool_) == False): 
+    if (not isinstance(board, np.ndarray) or 
+        not isinstance(board[r, c], np.bool_)): 
         raise ValueError('board must be 2d boolean numpy array')
     elif (r == 0 or r == board.shape[0] - 1 or # row/col cannot be on borders
           c == 0 or c == board.shape[0] - 1): 
@@ -37,7 +36,7 @@ def update(board):
     for row in range(1, size - 1): #thus we subtract 1 instead of adding
         for col in range(1, size - 1):
             count = inspect(board, row, col).count(True) 
-            if board[row, col] == True: 
+            if board[row, col]: 
                 if count == 2 or count == 3: 
                     new_board[row, col] = True
             else:
@@ -51,7 +50,7 @@ def get(board):
     living = []
     for row in range(1, board.shape[0] - 1):
         for col in range(1, board.shape[0] - 1):
-            if board[row, col] == True:
+            if board[row, col]:
                 living.append([row, col])
     return living
 
@@ -124,7 +123,7 @@ class Plotter:
         animation = ani.FuncAnimation(fig, self.update_ani,
                                       fargs=(img,),
                                       frames=2,
-                                      interval=speed)
+                                      interval=speed) #animation variable is to appease matplotlib
         plt.show() 
 
     def show_3d(self, x, y, z, size):
@@ -136,7 +135,7 @@ class Plotter:
         '''
         fig = plt.figure() 
         ax = fig.add_subplot(111, projection='3d')
-        scatter = ax.scatter(x, y, z, c='black', marker='s',
+        ax.scatter(x, y, z, c='black', marker='s',
                              s=size)
         plt.show()
 
@@ -242,7 +241,7 @@ class Application(tk.Frame):
 
     def on_animate_click(self):
         plotter = Plotter(self.game_board)
-        animate = plotter.animate(self.speed) #set variable just to appease matplotlib
+        plotter.animate(self.speed)
 
     def plot3d_button(self):
         self.plot_button = tk.Button(self.root,
@@ -254,7 +253,7 @@ class Application(tk.Frame):
         game_3d = self.game_board
         x, y, z = get_xyz(game_3d, self.depth)
         plotter = Plotter(self.game_board)
-        plot3d = plotter.show_3d(x, y, z, self.scatter_size)
+        plotter.show_3d(x, y, z, self.scatter_size)
 
     def speed_dropdown(self):
         self.selected_speed = tk.StringVar(self.root)
@@ -298,7 +297,7 @@ class Application(tk.Frame):
 def main():
     root = tk.Tk()
     root.title('Conway\'s Game of Life')
-    app = Application(root)
+    Application(root)
     root.mainloop()
 
 
