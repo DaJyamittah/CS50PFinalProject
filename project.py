@@ -1,38 +1,38 @@
-#Final Project for CS50P edx
-#I have written this originally to contain a class "Board"
-#but re-writing it without to satisfy the 3 functions condition
-#of cs50 submit
-#Firstly, a Board object was a 2d boolean numpy array
-#with an init for start_state, which would have been the
-#Board with some True elements
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as ani
+"""
+Final Project for CS50P edx
+Conway's Game of Life with a tkinter GUI.
+Animate and 3D Plot from starting state
+"""
 import tkinter as tk
+import matplotlib.animation as ani
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-def inspect(board, r, c): 
-    '''Returns a list of neighboring elements.'''
+def inspect(board, element_row, element_col): 
+    """Returns a list of neighboring elements."""
     if (not isinstance(board, np.ndarray) or 
-        not isinstance(board[r, c], np.bool_)): 
+        not isinstance(board[element_row, element_col], np.bool_)): 
         raise ValueError('board must be 2d boolean numpy array')
-    elif (r == 0 or r == board.shape[0] - 1 or # row/col cannot be on borders
-          c == 0 or c == board.shape[0] - 1): 
+    elif (element_row == 0 or element_row == board.shape[0] - 1 or # row/col cannot be on borders
+          element_col == 0 or element_col == board.shape[0] - 1): 
         raise ValueError('board elements must be in playable area')
+    
     neighbors = []
     for row in range(-1, 2): 
         for col in range(-1, 2):
             if [row, col] == [0, 0]:
                 continue
             else:
-                neighbors.append(board[row+r, col+c])
+                neighbors.append(board[row+element_row, col+element_col])
     return neighbors
 
 
 def update(board):
-    '''Returns a new game board with the updated state of the current state of the board.'''
+    """Returns a new game board with the updated state of the current state of the board."""
     size = board.shape[0] #size of board will be +2 of playable area
     new_board = np.full((size, size), False)
+
     for row in range(1, size - 1): #thus we subtract 1 instead of adding
         for col in range(1, size - 1):
             count = inspect(board, row, col).count(True) 
@@ -46,8 +46,9 @@ def update(board):
 
 
 def get(board):
-    '''Get the co-ordinates of each living cell in a tick.'''
+    """Get the co-ordinates of each living cell in a tick."""
     living = []
+
     for row in range(1, board.shape[0] - 1):
         for col in range(1, board.shape[0] - 1):
             if board[row, col]:
@@ -56,8 +57,9 @@ def get(board):
 
 
 def get_3d(board, depth):
-    '''Get x, y and z of each living cell in each tick.'''
+    """Get x, y and z of each living cell in each tick."""
     living_3d = [] #empty 3d-value (x, y, z) list
+
     for level in range(depth):
         sub_living = get(board) #2 dimensional sublist of current_state living cells
         for cell in sub_living:
@@ -68,11 +70,12 @@ def get_3d(board, depth):
 
 
 def get_xyz(board, depth):
-    '''Get XYZ coordinates - returns a tuple of seperated x, y, z lists.'''
+    """Get XYZ coordinates - returns a tuple of seperated x, y, z lists."""
     living_3d = get_3d(board, depth) #gets ([x], [y], [z]) lists to depth number of ticks from start state
     x = []
     y = []
     z = []
+
     for level in range(depth):
         for element in living_3d[level]:
             a, b, c = element #a:x, b:y, c:z
@@ -83,40 +86,39 @@ def get_xyz(board, depth):
 
 
 class Plotter:
-    '''
+    """
     Defines matplotlib plots to show animation and 3d scatter plot.
 
     Attributes: 
     start_state - 2d boolean numpy array: The user-defined start state of the
     game board from which the game will run.
-    '''
-
+    """
     def __init__(self, start_state):
         self.current_state = start_state
 
     def update_2d(self):
-        '''Update the current state to the next tick.'''
+        """Update the current state to the next tick."""
         self.current_state = update(self.current_state)
     
     def update_ani(self, frame, img): #frame is necessary for matplotlibs FuncAnimation method
-        '''
+        """
         Updates numpy array to a new plot 'img'.
 
         frame argument is necessary for matplotlibs FuncAnimation method
         returns img, - img needs to be a tuple, the comma signifies this
-        '''
+        """
         self.update_2d() 
         img.set_array(self.current_state) 
         return img,
 
     def animate(self, speed):
-        '''
+        """
         Creates animation by updating current_state and mapping it
         to 'img'.
 
         Arguments in FuncAnimation are passed through fargs, frames is implicit
         frames argument simply needs to be more than 1 to work, I don't know why
-        '''
+        """
         fig, ax = plt.subplots()
         img = plt.imshow(self.current_state)
         plt.axis('off') #hide labels
@@ -127,12 +129,12 @@ class Plotter:
         plt.show() 
 
     def show_3d(self, x, y, z, size):
-        '''
+        """
         Shows 3D scatter plot
         
         x, y, and z are derived from get_xyz(start_state, depth)
         size is determined in the UI based on the depth of the scatter plot
-        '''
+        """
         fig = plt.figure() 
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(x, y, z, c='black', marker='s',
@@ -141,7 +143,7 @@ class Plotter:
 
 
 class Application(tk.Frame):
-    '''
+    """
     UI - User defined starting state of board with plotting options.
 
     A canvas with a grid drawn in is the main element,
@@ -151,9 +153,9 @@ class Application(tk.Frame):
     'Depth' (of 3D scatter plot).
     
     Another two buttons to set the depth and speed.
-    '''
+    """
     def __init__(self, root):
-        '''
+        """
         Initialization of UI element.
 
         grid_size (int): cells which make up the grid
@@ -164,7 +166,7 @@ class Application(tk.Frame):
 
         game_board (2d bool_ numpy array): starts out as a completely False board based on grid size
         I'm adding +2 to each of rows and cols to give a buffer for the inspect() function to work properly
-        '''
+        """
         self.root = root
 
         self.grid_size = 50
@@ -182,7 +184,7 @@ class Application(tk.Frame):
         self.game_board = np.full((self.grid_size + 2, self.grid_size + 2), False)
 
     def create_grid(self): 
-        '''This is a canvas object within the grid() of tkinter.
+        """This is a canvas object within the grid() of tkinter.
 
         Using grid_size * cell_size to get the width/height of the window to make the canvas 
         big enough.
@@ -190,7 +192,7 @@ class Application(tk.Frame):
         Create rectangles to represent each element in the playable area of the game_board.
 
         Bind canvas to click event.
-        '''
+        """
         self.canvas = tk.Canvas(self.root, 
                                 width=(self.grid_size * self.cell_size),
                                 height=(self.grid_size * self.cell_size))
@@ -208,14 +210,14 @@ class Application(tk.Frame):
         self.canvas.bind('<Button-1>', self.on_click)
 
     def on_click(self, event):
-        '''
+        """
         Click Event (Canvas element)
 
         Gets the x/y coordinates of the click event, then 
         changes the corresponding element in the game_board.
 
         Change the fill color of canvas() element based on state of game_board
-        '''
+        """
         x, y = event.x, event.y 
         grid_x = x // self.cell_size 
         grid_y = y // self.cell_size
@@ -271,7 +273,9 @@ class Application(tk.Frame):
 
     def set_speed(self):
         selected_speed = self.selected_speed.get()
-        speed_dict = {'Fast': 25, 'Gallop': 250, 'Slow': 1000}
+        speed_dict = {'Fast': 25, 
+                      'Gallop': 250, 
+                      'Slow': 1000}
         self.speed = speed_dict[selected_speed]
 
     def depth_dropdown(self):
@@ -290,7 +294,11 @@ class Application(tk.Frame):
 
     def set_depth(self):
         selected_depth = self.selected_depth.get()
-        depth_dict = {'Shallow': [25, 60], 'Mid': [75, 5], 'Deep': [225, 1]} #index 0: depth of plot, index 1: size of scatter point
+
+        #index 0: depth of plot, index 1: size of scatter point
+        depth_dict = {'Shallow': [25, 60], 
+                      'Mid': [75, 5], 
+                      'Deep': [225, 1]} 
         self.depth, self.scatter_size = depth_dict[selected_depth]
 
 
